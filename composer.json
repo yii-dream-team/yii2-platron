@@ -25,14 +25,13 @@
     "source": "https://github.com/yii-dream-team/yii2-platron"
   },
   "require": {
-    "yiisoft/yii2": "~2"
+    "php":">=5.4.0",
+    "yiisoft/yii2": "~2",
+    "guzzlehttp/guzzle": "4.2.*"
   },
   "autoload": {
     "psr-4": {
       "yiidreamteam\\platron\\": "./src"
     }
-  },
-  "extra": {
-    "bootstrap": "yiidreamteam\\platron\\Bootstrap"
   }
 }

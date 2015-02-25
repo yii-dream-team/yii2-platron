@@ -2,7 +2,10 @@
 
 namespace yiidreamteam\platron;
 
+use GuzzleHttp\Client;
 use yii\base\Component;
+use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Url;
 
 /**
@@ -15,10 +18,11 @@ class Api extends Component
     const URL_BASE = 'http://www.platron.ru';
     const URL_INIT_PAYMENT = 'init_payment.php';
 
+    private $client = null;
+    private $authParams = [];
+
     /** @var string Account ID */
     public $accountId;
-    /** @var string Account password */
-    public $accountPassword;
     /** @var string Secret key */
     public $secretKey;
     /** @var bool Merchant test mode */
@@ -49,22 +53,91 @@ class Api extends Component
     /** @var string Url of merchant site page, where platron redirect user after cash payment */
     public $siteReturnUrl;
 
+    /**
+     * @inheritdoc
+     */
+    public function init()
+    {
+        if ($this->accountId)
+            throw new InvalidConfigException('accountId required.');
+
+        if (!$this->secretKey)
+            throw new InvalidConfigException('secretKey required.');
+
+        if (!$this->accountPassword)
+            throw new InvalidConfigException('accountPassword required.');
+    }
+
+    /**
+     * @return Client|null
+     */
+    public function getClient()
+    {
+        if (empty($this->client))
+            $this->client = new Client([
+                'base_url' => static::URL_BASE
+            ]);
+
+        return $this->client;
+    }
+
+    /**
+     * @param $script
+     * @param array $params
+     * @throws \Exception
+     */
+    public function call($script, $params = [])
+    {
+        try {
+            $response = $this->getClient()->post($script, ['body' => $this->prepareParams($params, $script)]);
+            var_dump($response);
+            exit;
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * @param $script
+     * @param $params
+     * @return array
+     */
+    private function prepareParams($script, $params)
+    {
+        $params = array_filter($params);
+        $params['pg_sig'] = $this->generateSig($script, $params);
+
+        return $params;
+    }
+
+    /**
+     * @param $invoiceId
+     * @param $amount
+     * @throws \Exception
+     */
     public function redirectToPayment($invoiceId, $amount)
     {
         try {
             $url = $this->getPaymentUrl($invoiceId, $amount);
             \Yii::$app->response->redirect($url)->send();
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             throw $e;
         }
     }
 
+    /**
+     * @param $invoiceId
+     * @param $amount
+     * @return bool
+     */
     private function getPaymentUrl($invoiceId, $amount)
     {
         $defaultParams = [
-            'pg_merchant_id' => $this->accountId,
+            'pg_merchant_id' => $this->accountId, //*
+            'pg_description' => '', //*
+            'pg_amount' => number_format($amount, 2, '.', ''), //*
+            'pg_salt' => \Yii::$app->getSecurity()->generateRandomString(), // *
             'pg_order_id' => $invoiceId,
-            'pg_amount' => number_format($amount, 2, '.', ''),
             'pg_currency' => $this->currency,
             'pg_check_url' => $this->checkUrl ? Url::to($this->checkUrl, true) : null,
             'pg_result_url' => $this->resultUrl ? Url::to($this->resultUrl, true) : null,
@@ -83,21 +156,39 @@ class Api extends Component
 //            'pg_user_phone' => '',
 //            'pg_user_contact_email' => '',
 //            'pg_user_email' => '',
-//            'pg_description' => '',
 //            'pg_user_ip' => '',
 //            'pg_postpone_payment' => '',
 //            'pg_language' => '',
 //            'pg_recurring_start' => '',
 //            'pg_recurring_lifetime' => '',
-//            'pg_salt' => '',
-//            'pg_sig' => '',
             'pg_testing_mode' => $this->testMode,
         ];
 
-
-
+        return false;
     }
 
+    /**
+     * Generate SIG
+     * @param $params
+     * @param $script
+     * @return string
+     */
+    protected function generateSig($script, $params)
+    {
+        if ($script)
+            throw new \BadMethodCallException('Unknown request url');
+
+        ksort($params);
+        array_unshift($params, $script);
+        array_push($params, $this->secretKey);
+
+        return md5(implode(';', $params));
+    }
+
+    /**
+     * @param $code
+     * @return mixed
+     */
     protected function getErrorCodeLabel($code)
     {
         $labels = [
@@ -122,6 +213,10 @@ class Api extends Component
         return ArrayHelper::getValue($labels, $code, null);
     }
 
+    /**
+     * @param $code
+     * @return mixed
+     */
     protected function getRejectCodeLabel($code)
     {
         $labels = [
@@ -160,4 +255,5 @@ class Api extends Component
 
         return ArrayHelper::getValue($labels, $code, null);
     }
+
 }
