@@ -1,0 +1,38 @@
+{
+  "name": "yii-dream-team/yii2-platron",
+  "description": "Yii2 Platron payment gateway API",
+  "version": "0.0.1",
+  "type": "yii2-extension",
+  "keywords": [
+    "yii2",
+    "payment",
+    "billing",
+    "gateway"
+  ],
+  "homepage": "https://github.com/yii-dream-team/yii2-platron",
+  "time": "2015-25-02",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Valentin Konusov",
+      "email": "rlng-krsk@yandex.ru",
+      "homepage": "http://valentinek.ru",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/yii-dream-team/yii2-platron/issues",
+    "source": "https://github.com/yii-dream-team/yii2-platron"
+  },
+  "require": {
+    "yiisoft/yii2": "~2"
+  },
+  "autoload": {
+    "psr-4": {
+      "yiidreamteam\\platron\\": "./src"
+    }
+  },
+  "extra": {
+    "bootstrap": "yiidreamteam\\platron\\Bootstrap"
+  }
+}
