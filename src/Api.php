@@ -171,15 +171,12 @@ class Api extends Component
     }
 
     /**
-     * @param $invoiceId
-     * @param $amount
-     * @param $description
+     * @param string $url
      * @throws \Exception
      */
-    public function redirectToPayment($invoiceId, $amount, $description)
+    public function redirectToPayment($url)
     {
         try {
-            $url = $this->getPaymentUrl($invoiceId, $amount, $description);
             \Yii::$app->response->redirect($url)->send();
         } catch (\Exception $e) {
             throw $e;
@@ -190,9 +187,9 @@ class Api extends Component
      * @param $invoiceId
      * @param $amount
      * @param $description
-     * @return bool
+     * @return array
      */
-    private function getPaymentUrl($invoiceId, $amount, $description)
+    public function getPaymentUrl($invoiceId, $amount, $description)
     {
         $defaultParams = [
             'pg_merchant_id' => $this->accountId, //*
@@ -228,7 +225,7 @@ class Api extends Component
 
         $response = $this->call(static::URL_INIT_PAYMENT, $defaultParams);
 
-        return (string)ArrayHelper::getValue($response, 'pg_redirect_url');
+        return $response;
     }
 
     /**
