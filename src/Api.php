@@ -28,6 +28,9 @@ class Api extends Component
     const STATUS_ERROR = 'error';
     const STATUS_REJECTED = 'rejected';
 
+    const RESULT_ERROR = 0;
+    const RESULT_OK = 1;
+
     private $client = null;
 
     /** @var string Account ID */
@@ -84,7 +87,7 @@ class Api extends Component
         $event = new GatewayEvent(['gatewayData' => $data]);
 
         $this->trigger(GatewayEvent::EVENT_PAYMENT_REQUEST, $event);
-        if ($event->handled ) {
+        if ($event->handled && ArrayHelper::getValue($data, 'pg_result', static::RESULT_ERROR) == static::RESULT_OK) {
             $transaction = \Yii::$app->getDb()->beginTransaction();
             try {
                 $this->trigger(GatewayEvent::EVENT_PAYMENT_SUCCESS, $event);
