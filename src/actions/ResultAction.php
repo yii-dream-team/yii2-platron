@@ -7,7 +7,7 @@ namespace yiidreamteam\platron\actions;
 
 use yii\base\Action;
 use yii\base\InvalidConfigException;
-use yiidreamteam\perfectmoney\Api;
+use yiidreamteam\platron\Api;
 
 class ResultAction extends Action
 {
@@ -37,14 +37,11 @@ class ResultAction extends Action
     public function run()
     {
         try {
-            $this->api->processResult(\Yii::$app->request->post());
-            $this->api->
+            $response = $this->api->processResult(\Yii::$app->request->post());
         } catch (\Exception $e) {
-            if (!$this->silent)
-                throw $e;
+            throw $e;
         }
 
-        if (isset($this->redirectUrl))
-            return \Yii::$app->response->redirect($this->redirectUrl);
+        Api::sendXlmResponse($response);
     }
 }

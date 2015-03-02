@@ -72,26 +72,35 @@ class Api extends Component
     {
         $url = $this->resultUrl ? Url::to($this->resultUrl) : \Yii::$app->request->getUrl();
 
+        $response = [
+            'pg_status' => static::STATUS_ERROR,
+            'pg_salt' => ArrayHelper::getValue($data, 'pg_salt'),
+            'pg_description' => 'Оплата не принята',
+        ];
+
         if (!$this->checkHash($url, $data))
             throw new ForbiddenHttpException('Hash error');
 
         $event = new GatewayEvent(['gatewayData' => $data]);
 
         $this->trigger(GatewayEvent::EVENT_PAYMENT_REQUEST, $event);
-        if (!$event->handled)
-            throw new HttpException(503, 'Error processing request');
-
-        $transaction = \Yii::$app->getDb()->beginTransaction();
-        try {
-            $this->trigger(GatewayEvent::EVENT_PAYMENT_SUCCESS, $event);
-            $transaction->commit();
-        } catch (\Exception $e) {
-            $transaction->rollback();
-            \Yii::error('Payment processing error: ' . $e->getMessage(), 'Platron');
-            throw new HttpException(503, 'Error processing request');
+        if ($event->handled ) {
+            $transaction = \Yii::$app->getDb()->beginTransaction();
+            try {
+                $this->trigger(GatewayEvent::EVENT_PAYMENT_SUCCESS, $event);
+                $response = [
+                    'pg_status' => static::STATUS_OK,
+                    'pg_description' => 'Оплата принята'
+                ];
+                $transaction->commit();
+            } catch (\Exception $e) {
+                $transaction->rollback();
+                \Yii::error('Payment processing error: ' . $e->getMessage(), 'Platron');
+                throw new HttpException(503, 'Error processing request');
+            }
         }
 
-        return true;
+        return $this->prepareParams($url, $response);
     }
 
     /**
@@ -254,16 +263,11 @@ class Api extends Component
     /**
      * @param $data
      */
-    private function sendXlmResponse($data)
+    public static function sendXlmResponse($data)
     {
-        /*\Yii::$app->response->format = Response::FORMAT_XML;
+        \Yii::$app->response->format = Response::FORMAT_XML;
         \Yii::$app->response->data = $data;
-        $xml->addChild('pg_salt', $arrParams['pg_salt']); // в ответе необходимо указывать тот же pg_salt, что и в запросе
-        $xml->addChild('pg_status', 'ok');
-        $xml->addChild('pg_description', "Оплата принята");
-        $xml->addChild('pg_sig', PG_Signature::makeXML($thisScriptName, $xml, $MERCHANT_SECRET_KEY));
-        header('Content-type: text/xml');
-        print $xml->asXML();*/
+        \Yii::$app->response->send();
     }
 
     /**
