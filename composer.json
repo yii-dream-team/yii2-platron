@@ -1,7 +1,6 @@
 {
   "name": "yii-dream-team/yii2-platron",
   "description": "Yii2 Platron payment gateway API",
-  "version": "0.0.1",
   "type": "yii2-extension",
   "keywords": [
     "yii2",
@@ -10,7 +9,6 @@
     "gateway"
   ],
   "homepage": "https://github.com/yii-dream-team/yii2-platron",
-  "time": "2015-25-02",
   "license": "MIT",
   "authors": [
     {
